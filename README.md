@@ -33,7 +33,7 @@
 
 ### **API 数据来源**
 
-- [CoinGecko API](https://www.coingecko.com/en/api)：提供实时加密货币市场数据，包括市值、价格、交易量等。
+- [CoinGecko API](https://www.coingecko.com/api/documentations/v3)：提供实时加密货币市场数据，包括市值、价格、交易量等。
 
 ---
 
@@ -43,7 +43,6 @@
 project-root/
 ├── src/
 │   ├── index.ts       // CF Worker 主逻辑
-│   └── utils.ts       // 工具函数（如日期格式化、交集计算等）
 ├── wrangler.toml      // Cloudflare Workers 配置文件
 ├── package.json       // 项目依赖
 ├── tsconfig.json      // TypeScript 配置文件
