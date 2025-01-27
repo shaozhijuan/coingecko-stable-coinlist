@@ -55,7 +55,6 @@ async function fetchTop500Tokens(): Promise<CoinData[] | null> {
 	}
 }
 
-// 工具函数：根据日期范围计算交集
 async function fetchIntersectionByDateRange(startDate: Date, endDate: Date, limit: number, env: Env): Promise<Response> {
 	if (startDate > endDate) {
 		return new Response('Invalid date range: start_date must be earlier than end_date.', { status: 400 });
@@ -73,7 +72,8 @@ async function fetchIntersectionByDateRange(startDate: Date, endDate: Date, limi
 		const value = await env.coingecko.get(formattedDate);
 		if (value) {
 			const parsedData: CoinData[] = JSON.parse(value);
-			datesData.push(parsedData);
+			const limitedData = limit > 0 ? parsedData.slice(0, limit) : parsedData;
+			datesData.push(limitedData);
 		}
 		currentDate.setDate(currentDate.getDate() + 1);
 	}
@@ -88,18 +88,40 @@ async function fetchIntersectionByDateRange(startDate: Date, endDate: Date, limi
 		return commonTokens.filter((token) => currentTokenIds.has(token.id));
 	}, datesData[0]);
 
+	// 记录被过滤掉的代币
+	const allTokenIds = new Set(datesData.flat().map((token) => token.id));
+	const intersectionIds = new Set(intersection.map((token) => token.id));
+	const filteredOutTokens = Array.from(allTokenIds).filter((id) => !intersectionIds.has(id));
+
 	// 按市值降序排序
 	intersection.sort((a, b) => b.market_cap - a.market_cap);
 
 	// 限制返回结果数量
 	const limitedResult = limit > 0 ? intersection.slice(0, limit) : intersection;
-	const symbolList = limitedResult.map((token) => token.symbol);
 
-	return new Response(JSON.stringify(symbolList), {
-		status: 200,
-		headers: { 'Content-Type': 'application/json' },
-	});
+	// 提取代币符号列表
+	const symbolList = limitedResult.map((token) => token.symbol.toUpperCase());
+	const filteredOutSymbols = filteredOutTokens.map(
+		(id) =>
+			datesData
+				.flat()
+				.find((token) => token.id === id)
+				?.symbol.toUpperCase() || id.toUpperCase()
+	);
+
+	// 返回包含交集和被过滤掉的交易对
+	return new Response(
+		JSON.stringify({
+			pairlist: symbolList,
+			filteredOut: filteredOutSymbols,
+		}),
+		{
+			status: 200,
+			headers: { 'Content-Type': 'application/json' },
+		}
+	);
 }
+
 
 export default {
 	async scheduled(event, env, ctx): Promise<void> {
