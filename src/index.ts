@@ -55,7 +55,13 @@ async function fetchTop500Tokens(): Promise<CoinData[] | null> {
 	}
 }
 
-async function fetchIntersectionByDateRange(startDate: Date, endDate: Date, limit: number, env: Env): Promise<Response> {
+async function fetchIntersectionByDateRange(
+	startDate: Date,
+	endDate: Date,
+	limit: number,
+	env: Env,
+	marketType: string
+): Promise<Response> {
 	if (startDate > endDate) {
 		return new Response('Invalid date range: start_date must be earlier than end_date.', { status: 400 });
 	}
@@ -101,6 +107,13 @@ async function fetchIntersectionByDateRange(startDate: Date, endDate: Date, limi
 
 	// 提取代币符号列表
 	const symbolList = limitedResult.map((token) => token.symbol.toUpperCase());
+	const pairlist = symbolList.map((symbol) => {
+		if (marketType === 'futures') {
+			return `${symbol.toUpperCase()}/USDT:USDT`;
+		} else {
+			return `${symbol.toUpperCase()}/USDT`;
+		}
+	});
 	const filteredOutSymbols = filteredOutTokens.map(
 		(id) =>
 			datesData
@@ -112,7 +125,7 @@ async function fetchIntersectionByDateRange(startDate: Date, endDate: Date, limi
 	// 返回包含交集和被过滤掉的交易对
 	return new Response(
 		JSON.stringify({
-			pairlist: symbolList,
+			pairlist: pairlist,
 			filteredOut: filteredOutSymbols,
 		}),
 		{
@@ -121,7 +134,6 @@ async function fetchIntersectionByDateRange(startDate: Date, endDate: Date, limi
 		}
 	);
 }
-
 
 export default {
 	async scheduled(event, env, ctx): Promise<void> {
@@ -147,6 +159,7 @@ export default {
 			// 参数解析
 			const days = parseInt(url.searchParams.get('days') || '0'); // 最近几天
 			const limit = parseInt(url.searchParams.get('limit') || '0'); // 限制返回结果的代币数量
+			const marketType = url.searchParams.get('market') || 'spot'; // "spot" 或 "futures"
 
 			// 如果传入 `days` 参数，自动计算日期范围
 			if (days > 0) {
@@ -155,7 +168,7 @@ export default {
 				startDate.setDate(today.getDate() - (days - 1)); // 计算起始日期（包括今天）
 
 				// 调用封装好的通用处理逻辑
-				return await fetchIntersectionByDateRange(startDate, today, limit, env);
+				return await fetchIntersectionByDateRange(startDate, today, limit, env, marketType);
 			}
 
 			// 如果没有提供 `days` 参数，则认为是常规日期范围计算
@@ -173,7 +186,7 @@ export default {
 			}
 
 			// 调用封装好的通用处理逻辑
-			return await fetchIntersectionByDateRange(startDate, endDate, limit, env);
+			return await fetchIntersectionByDateRange(startDate, endDate, limit, env, marketType);
 		} catch (err) {
 			console.error(`Error processing request: ${err}`);
 			return new Response('Internal Server Error', { status: 500 });
