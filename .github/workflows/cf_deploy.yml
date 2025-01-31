@@ -22,7 +22,7 @@ jobs:
 
       # Step 3: Install Wrangler
       - name: Install Wrangler
-        run: npm install -g @cloudflare/wrangler
+        run: npm install -g wrangler
 
       # Step 4: Authenticate Wrangler
       - name: Authenticate Wrangler
