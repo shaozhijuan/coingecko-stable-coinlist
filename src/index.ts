@@ -125,7 +125,8 @@ async function fetchIntersectionByDateRange(
 	// 返回包含交集和被过滤掉的交易对
 	return new Response(
 		JSON.stringify({
-			pairlist: pairlist,
+			pairs: pairlist,
+			refresh_period: 42600, // 12 hour
 			filteredOut: filteredOutSymbols,
 		}),
 		{

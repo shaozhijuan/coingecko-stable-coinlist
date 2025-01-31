@@ -1,0 +1,35 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches:
+      - main  # Trigger deployment on pushes to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'  # Use Node.js version compatible with Wrangler
+
+      # Step 3: Install Wrangler
+      - name: Install Wrangler
+        run: npm install -g @cloudflare/wrangler
+
+      # Step 4: Authenticate Wrangler
+      - name: Authenticate Wrangler
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: wrangler login --api-token $CF_API_TOKEN
+
+      # Step 5: Publish to Cloudflare Workers
+      - name: Deploy to Cloudflare Workers
+        run: wrangler deploy
