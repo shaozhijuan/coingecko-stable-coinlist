@@ -144,13 +144,43 @@ export default {
 		const month = String(today.getMonth() + 1).padStart(2, '0');
 		const day = String(today.getDate()).padStart(2, '0');
 
-		const formattedDate = `${year}-${month}-${day}`;
-		const top500Tokens = await fetchTop500Tokens(); // 加上 await 确保获取到数据
-		if (top500Tokens) {
-			console.log(`Fetched ${top500Tokens.length} tokens!`);
-			await env.coingecko.put(formattedDate, JSON.stringify(top500Tokens));
-		} else {
-			console.error('Failed to fetch top 500 tokens.'); // 错误处理
+		const formattedDate = `${year}-${month}-${day}`; // 格式化日期，例如 "2023-09-30"
+
+		try {
+			// 获取当天的数据
+			const fetchedTokens = await fetchTop500Tokens(); // 获取最新代币数据
+			if (!fetchedTokens) {
+				console.error('Failed to fetch top 500 tokens.');
+				return;
+			}
+
+			console.log(`Fetched ${fetchedTokens.length} tokens!`);
+
+			// 检查是否已经存在该日期的数据
+			const existingData = await env.coingecko.get(formattedDate);
+
+			if (existingData) {
+				// 对比 KV 中的数据和最新获取的数据
+				const existingTokens = JSON.parse(existingData);
+
+				// 简单对比：检查数据是否一致
+				const isDataIdentical = JSON.stringify(existingTokens) === JSON.stringify(fetchedTokens);
+
+				if (isDataIdentical) {
+					console.log(`Data for ${formattedDate} is already up-to-date. Skipping update.`);
+					return; // 数据一致，跳过更新
+				} else {
+					console.log(`Data for ${formattedDate} has changed. Proceeding to update KV.`);
+				}
+			} else {
+				console.log(`No existing data for ${formattedDate}. Proceeding to write.`);
+			}
+
+			// 写入新的数据到 KV
+			await env.coingecko.put(formattedDate, JSON.stringify(fetchedTokens));
+			console.log(`Successfully updated KV for ${formattedDate}.`);
+		} catch (error) {
+			console.error(`Error during scheduled task: ${error}`);
 		}
 	},
 	async fetch(request, env, ctx): Promise<Response> {
