@@ -128,6 +128,8 @@ async function fetchIntersectionByDateRange(
 			pairs: pairlist,
 			refresh_period: 42600, // 12 hour
 			filteredOut: filteredOutSymbols,
+			filteredOutCount: filteredOutTokens.length, // 过滤掉的代币数量
+			totalRemainingCount: intersection.length, // 剩余代币的数量
 		}),
 		{
 			status: 200,
