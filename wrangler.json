@@ -13,7 +13,7 @@
 	},
 	"kv_namespaces": [
 		{
-			"binding": "coin",
+			"binding": "coingecko",
 			"id": "88c3ee74a6fb49e3b0e5cae3dbf7a359"
 		}
 	],
